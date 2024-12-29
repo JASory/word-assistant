@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Word Assistance
+Path=/opt/wordassist/
+Exec=/opt/wordassist/word-assistant
+Terminal=false
+Icon=/opt/wordassist/wordassist.png
