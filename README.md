@@ -13,6 +13,6 @@ Searches the Linux system dictionary for all words that meet the criteria
 ## Generate
 Produces at most one random word that meets the criteria.
 ## Dev
-Requires Rust and libgtk-4-dev. Run install.sh. 
+Requires Rust, libgtk-4-dev, and libadwaita-1-dev. Run install.sh. 
 
 
