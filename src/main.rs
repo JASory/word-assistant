@@ -19,6 +19,9 @@ use gtk4::{
     glib::{self, clone},
     prelude::*,
 };
+use libadwaita::prelude::*;
+
+
 
 struct Dictionary{
   words: Vec<String>,
@@ -272,15 +275,17 @@ fn filter_pattern(x: &str, fltr: &Vec<(char,usize)>)-> bool{
 
 
 fn add_actions(
-    application: &gtk4::Application,
-    window: &gtk4::ApplicationWindow,
+    application: &libadwaita::Application,
+    window: &libadwaita::ApplicationWindow,
 ) {
 
  let help = gtk4::gio::SimpleAction::new("help", None);
-    help.connect_activate(clone!(@weak window => move |_, _| {
+    help.connect_activate(clone!(
+    #[weak]
+    window, move |_, _| {
     
         let textout : &str = 
-        " Application filters from the system dictionary according to any one of 3 criteria.
+        " Application filters from the system dictionary according to atleast one of 3 criteria.
         1. Word length, either as a single length {3} or a range {3-5}
         2. List of all the letters that the word can be comprised of.
         3. Matching a pattern of the form -{x}--. where - can be any lower-case Latin character.
@@ -291,11 +296,8 @@ fn add_actions(
         let textview = gtk4::Label::new(Some(textout));
         
                 let p = gtk4::Dialog::builder()
-                        //.default_widget(&textview)
                         .title("Help")
                         .build();
-                        
-       // p.set_title(Some("Attendees"));
         p.set_child(Some(&textview));
        
         p.set_transient_for(Some(&window));
@@ -303,14 +305,16 @@ fn add_actions(
     }));
 
     let about = gtk4::gio::SimpleAction::new("about", None);
-    about.connect_activate(clone!(@weak window => move |_, _| {
+    about.connect_activate(clone!(
+    #[weak]
+    window, move |_, _| {
         let p = gtk4::AboutDialog::new();
         p.set_authors(&["J.A Sory"]);
         p.set_license_type(gtk4::License::Gpl30);
         p.set_logo_icon_name(None);
         p.set_program_name(Some("Word Assistant"));
         p.set_copyright(Some("© 2024 J.A Sory"));
-        p.set_version(Some("1.0.0"));
+        p.set_version(Some("1.1.0"));
         p.set_comments(Some("Word format searcher"));
         p.set_transient_for(Some(&window));
         p.show();
@@ -331,8 +335,8 @@ fn build_header_menu(header: &gtk4::HeaderBar){
         header.pack_end(&p);
  }
 
-fn build_ui(application: &gtk4::Application) {
-   let window = gtk4::ApplicationWindow::new(application);
+fn build_ui(application: &libadwaita::Application) {
+   let window = libadwaita::ApplicationWindow::new(application);
     window.set_default_size(384,256);
     
     
@@ -358,32 +362,50 @@ fn build_ui(application: &gtk4::Application) {
                   .show_title_buttons(true)
                   .title_widget(&header_title)
                   .build();
-    
-   build_header_menu(&top);    
-    
-    window.set_titlebar(Some(&top));
-    
-   let row = gtk4::Box::builder()
-        .orientation(gtk4::Orientation::Vertical)
-        .spacing(6)
-        .margin_start(12)
-        .margin_end(12)
-        .margin_top(12)
-        .margin_bottom(12)
-        .build();
-    
-    row.append(&length_label);
-    row.append(&length_entry);
-    row.append(&short);
-    row.append(&word_entry);
-    row.append(&pattern_label);
-    row.append(&pattern_entry);
-    row.append(&submit_button);
-    row.append(&generate_button);
-    row.append(&output);
 
     
-    submit_button.connect_clicked(clone!(@weak length_entry, @weak word_entry, @weak pattern_entry, @weak output, @weak letter_button => move |_|{
+   build_header_menu(&top);    
+  
+    
+   let row = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+  
+        let list = gtk4::ListBox::builder()
+            .margin_top(32)
+            .margin_end(32)
+            .margin_bottom(32)
+            .margin_start(32)
+            .selection_mode(gtk4::SelectionMode::None)
+            // makes the list look nicer
+            .css_classes(vec![String::from("boxed-list")])
+            .build();
+            
+    
+        
+
+    list.append(&length_label);
+    list.append(&length_entry);
+    list.append(&short);
+    list.append(&word_entry);
+    list.append(&pattern_label);
+    list.append(&pattern_entry);
+    list.append(&submit_button);
+    list.append(&generate_button);
+    list.append(&output);
+
+        row.append(&top);
+        row.append(&list);
+        
+    submit_button.connect_clicked(clone!(
+         #[weak]
+     length_entry, 
+          #[weak]
+     word_entry,
+          #[weak]
+     pattern_entry, 
+          #[weak]
+     output, 
+          #[weak]
+     letter_button, move |_|{
 
         let mut length = (0,22);
         
@@ -418,7 +440,17 @@ fn build_ui(application: &gtk4::Application) {
         }
     }));
     
-    generate_button.connect_clicked(clone!(@weak length_entry, @weak word_entry, @weak pattern_entry, @weak output, @weak letter_button => move |_|{
+    generate_button.connect_clicked(clone!(
+    #[weak]
+     length_entry,
+     #[weak]
+     word_entry,
+     #[weak]
+     pattern_entry, 
+     #[weak]
+     output, 
+     #[weak]
+     letter_button, move |_|{
 
         let mut length = (0,22);
         
@@ -452,9 +484,11 @@ fn build_ui(application: &gtk4::Application) {
               None => output.set_text("Failed to load dictionary"),
         }
     }));
-    
-    window.set_child(Some(&row));
+
+    window.set_content(Some(&row));
+
         add_actions(application, &window);
+        window.set_title(Some("Word Assistant"));
 
     window.present();
 
@@ -462,11 +496,10 @@ fn build_ui(application: &gtk4::Application) {
 
 fn main() -> glib::ExitCode{
 
-    let application = gtk4::Application::builder()
+    let application = libadwaita::Application::builder()
         .application_id("com.github.jasory.word-assistant")
         .build();
 
     application.connect_activate(build_ui);
     application.run()
 }
-
